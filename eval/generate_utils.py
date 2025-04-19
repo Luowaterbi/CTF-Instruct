@@ -22,24 +22,26 @@ instructions = {
 }
 
 
-def generate_sft_prompt(inp, dataset):
+def generate_sft_prompt(inp, dataset, model_name=""):
     inst = inp
     if dataset in instructions:
         inst = instructions[dataset].format(inp)
     else:
         inst = instructions["default"].format(inp)
+    if "qwen" in model_name.lower():
+        return inst
     return INSTRUCTION.format(inst)
 
 
-def read_from_jsonl(dataset):
+def read_from_jsonl(dataset, model_name=""):
     if dataset == "humaneval":
         problems = get_human_eval_plus()
         for p in problems.keys():
-            problems[p]["prompt"] = generate_sft_prompt(problems[p]["prompt"].strip(), dataset)
+            problems[p]["prompt"] = generate_sft_prompt(problems[p]["prompt"].strip(), dataset, model_name)
     elif dataset == "mbpp":
         problems = get_mbpp_plus()
         for p in problems.keys():
-            problems[p]["prompt"] = generate_sft_prompt(problems[p]["prompt"].strip(), dataset)
+            problems[p]["prompt"] = generate_sft_prompt(problems[p]["prompt"].strip(), dataset, model_name)
     elif dataset == "ds1000":
         problems = {}
         path = f"../dataset/{dataset}.jsonl"

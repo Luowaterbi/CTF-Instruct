@@ -24,8 +24,8 @@ except:
     pass
 
 
-def construct_prompt(dataset,):
-    problems = read_from_jsonl(dataset)
+def construct_prompt(dataset, model_name):
+    problems = read_from_jsonl(dataset, model_name)
     task_ids = sorted(problems.keys())
     prompts = [problems[task_id]['prompt'].strip() for task_id in task_ids]
     prompt_batch = [prompt.replace('    ', '\t') for prompt in prompts]
@@ -51,7 +51,7 @@ def main():
     argsdict = vars(args)
     print(pprint.pformat(argsdict))
 
-    task_ids, prompt_batch = construct_prompt(args.dataset)
+    task_ids, prompt_batch = construct_prompt(args.dataset, args.model)
     num_samples = len(prompt_batch)
     print("Number of samples: {}".format(num_samples))
 
@@ -75,7 +75,14 @@ def main():
     print(f"Need {loops} Loops.")
     for _ in tqdm(range(loops), total=loops, leave=False, ncols=0):
         with torch.no_grad():
-            completions = llm.generate(prompt_batch, sampling_params)
+            if "qwen" in args.model.lower():
+                chat_batch = [[{"role":"user", "content":p}] for p in prompt_batch]
+                print("Eval Qwen!")
+                print(f"Test Set: {len(chat_batch)}")
+                print(chat_batch[0])
+                completions = llm.chat(chat_batch, sampling_params)
+            else:
+                completions = llm.generate(prompt_batch, sampling_params)
         for i, completion in enumerate(completions):
             gen_seqs = [completion.outputs[i].text for i in range(args.num_seqs_per_iter)]
             if gen_seqs is not None:
